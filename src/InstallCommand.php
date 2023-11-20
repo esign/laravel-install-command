@@ -2,6 +2,7 @@
 
 namespace Esign\InstallCommand;
 
+use Esign\InstallCommand\Exceptions\CouldNotInstallNodePackagesException;
 use Esign\InstallCommand\Installers\ComposerPackageInstaller;
 use Esign\InstallCommand\Installers\FileInstaller;
 use Esign\InstallCommand\Installers\NodePackageInstaller;
@@ -106,6 +107,8 @@ abstract class InstallCommand extends Command
             $command = $exception->result->command();
 
             $this->error("❌ Failed to install node packages. Please run [$command] manually.");
+        } catch (CouldNotInstallNodePackagesException $exception) {
+            $this->error($exception->getMessage());
         }
     }
 }

@@ -7,7 +7,7 @@ use Illuminate\Filesystem\Filesystem;
 class FileInstaller
 {
     public function __construct(
-        private Filesystem $filesystem,
+        protected Filesystem $filesystem,
     ) {}
 
     public function publishFile(string $path, string $target): void
