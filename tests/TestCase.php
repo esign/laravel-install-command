@@ -4,10 +4,10 @@ namespace Esign\InstallCommand\Tests;
 
 use Esign\InstallCommand\Tests\Support\InstallCommand;
 use Illuminate\Console\Application;
+use Illuminate\Foundation\Console\ModelMakeCommand;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
-use Orchestra\Canvas\Console\ModelMakeCommand;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
