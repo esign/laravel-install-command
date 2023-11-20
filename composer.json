@@ -1,17 +1,17 @@
 {
-    "name": ":vendor/:package_slug",
-    "description": ":package_description",
+    "name": "esign/laravel-install-command",
+    "description": "Simplify stub publishing and effortlessly manage Composer and Node packages",
     "keywords": [
-        ":vendor",
-        ":package_name"
+        "esign",
+        "install-command"
     ],
-    "homepage": "https://github.com/:vendor/:package_slug",
+    "homepage": "https://github.com/esign/laravel-install-command",
     "license": "MIT",
     "type": "library",
     "authors": [
         {
-            "name": ":author_name",
-            "email": ":author_email",
+            "name": "Jordy Van der Haegen",
+            "email": "jordy@esign.eu",
             "role": "Developer"
         }
     ],
@@ -26,12 +26,12 @@
     },
     "autoload": {
         "psr-4": {
-            ":vendor_namespace_escaped\\": "src"
+            "Esign\\InstallCommand\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            ":vendor_namespace_escaped\\Tests\\": "tests"
+            "Esign\\InstallCommand\\Tests\\": "tests"
         }
     },
     "scripts": {
@@ -44,10 +44,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                ":vendor_namespace_escaped\\:studly_package_nameServiceProvider"
+                "Esign\\InstallCommand\\InstallCommandServiceProvider"
             ],
             "aliases": {
-                ":studly_package_name": ":vendor_namespace_escaped\\Facades\\:studly_package_nameFacade"
+                "InstallCommand": "Esign\\InstallCommand\\Facades\\InstallCommandFacade"
             }
         }
     },

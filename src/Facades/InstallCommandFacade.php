@@ -1,13 +1,13 @@
 <?php
 
-namespace :vendor_namespace\Facades;
+namespace Esign\InstallCommand\Facades;
 
 use Illuminate\Support\Facades\Facade;
 
-class :studly_package_nameFacade extends Facade
+class InstallCommandFacade extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return ':package_name';
+        return 'install-command';
     }
 }
