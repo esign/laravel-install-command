@@ -14,13 +14,6 @@ You can install the package via composer:
 composer require esign/laravel-install-command
 ```
 
-The package will automatically register a service provider.
-
-Next up, you can publish the configuration file:
-```bash
-php artisan vendor:publish --provider="Esign\InstallCommand\InstallCommandServiceProvider" --tag="config"
-```
-
 ## Usage
 
 ### Testing
