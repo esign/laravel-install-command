@@ -52,11 +52,11 @@ class FileInstaller
         );
     }
 
-    public function fileContainsString(string $path, string $search): bool
+    public function fileContainsString(string $path, ?string $search): bool
     {
         return str_contains(
             haystack: $this->filesystem->get($path),
-            needle: $search
+            needle: $search ?? ''
         );
     }
 }
