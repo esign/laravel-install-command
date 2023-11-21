@@ -14,6 +14,7 @@ class ComposerPackageInstaller
         $formattedDependencyList = $this->formatDependencyList($packages);
 
         return Process::path(base_path())
+            ->forever()
             ->run("composer require $formattedDependencyList")
             ->throw();
     }
@@ -23,6 +24,7 @@ class ComposerPackageInstaller
         $formattedDependencyList = $this->formatDependencyList($packages);
 
         return Process::path(base_path())
+            ->forever()
             ->run("composer require --dev $formattedDependencyList")
             ->throw();
     }

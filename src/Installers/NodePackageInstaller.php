@@ -21,6 +21,7 @@ class NodePackageInstaller
         $formattedDependencyList = $this->formatDependencyList($packages);
 
         return Process::path(base_path())
+            ->forever()
             ->run("npm install $formattedDependencyList")
             ->throw();
     }
@@ -31,6 +32,7 @@ class NodePackageInstaller
         $formattedDependencyList = $this->formatDependencyList($packages);
 
         return Process::path(base_path())
+            ->forever()
             ->run("npm install --save-dev $formattedDependencyList")
             ->throw();
     }
