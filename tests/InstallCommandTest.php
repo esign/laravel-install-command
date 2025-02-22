@@ -8,7 +8,7 @@ use Esign\InstallCommand\Tests\Support\InstallCommand;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 
-class InstallCommandTest extends TestCase
+final class InstallCommandTest extends TestCase
 {
     #[Test]
     public function it_can_publish_files(): void
