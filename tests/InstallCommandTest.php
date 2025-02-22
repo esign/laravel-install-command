@@ -2,6 +2,7 @@
 
 namespace Esign\InstallCommand\Tests;
 
+use PHPUnit\Framework\Attributes\Test;
 use Esign\InstallCommand\Exceptions\CouldNotInstallNodePackagesException;
 use Esign\InstallCommand\Tests\Support\InstallCommand;
 use Illuminate\Support\Facades\File;
@@ -9,7 +10,7 @@ use Illuminate\Support\Facades\Process;
 
 class InstallCommandTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function it_can_publish_files()
     {
         $this->artisan(InstallCommand::class);
@@ -17,7 +18,7 @@ class InstallCommandTest extends TestCase
         $this->assertFileExists(app_path('Services/UserService.php'));
     }
 
-    /** @test */
+    #[Test]
     public function it_can_append_after_the_search_value_in_a_file()
     {
         $this->artisan(InstallCommand::class);
@@ -33,7 +34,7 @@ class InstallCommandTest extends TestCase
         ));
     }
 
-    /** @test */
+    #[Test]
     public function it_can_install_composer_packages()
     {
         $this->artisan(InstallCommand::class);
@@ -42,7 +43,7 @@ class InstallCommandTest extends TestCase
         Process::assertRan('composer require --dev my/dev-composer-package');
     }
 
-    /** @test */
+    #[Test]
     public function it_can_throw_an_exception_when_no_package_json_file_is_present()
     {
         File::delete(base_path('package.json'));
@@ -51,7 +52,7 @@ class InstallCommandTest extends TestCase
         $command->expectsOutput("Could not find package.json file in the root of your project. Please create one using `npm init`");
     }
 
-    /** @test */
+    #[Test]
     public function it_can_install_node_packages()
     {
         $this->artisan(InstallCommand::class);
