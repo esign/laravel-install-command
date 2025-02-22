@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Process;
 class InstallCommandTest extends TestCase
 {
     #[Test]
-    public function it_can_publish_files()
+    public function it_can_publish_files(): void
     {
         $this->artisan(InstallCommand::class);
 
@@ -19,7 +19,7 @@ class InstallCommandTest extends TestCase
     }
 
     #[Test]
-    public function it_can_append_after_the_search_value_in_a_file()
+    public function it_can_append_after_the_search_value_in_a_file(): void
     {
         $this->artisan(InstallCommand::class);
 
@@ -35,7 +35,7 @@ class InstallCommandTest extends TestCase
     }
 
     #[Test]
-    public function it_can_install_composer_packages()
+    public function it_can_install_composer_packages(): void
     {
         $this->artisan(InstallCommand::class);
 
@@ -44,7 +44,7 @@ class InstallCommandTest extends TestCase
     }
 
     #[Test]
-    public function it_can_throw_an_exception_when_no_package_json_file_is_present()
+    public function it_can_throw_an_exception_when_no_package_json_file_is_present(): void
     {
         File::delete(base_path('package.json'));
         $command = $this->artisan(InstallCommand::class);
@@ -53,7 +53,7 @@ class InstallCommandTest extends TestCase
     }
 
     #[Test]
-    public function it_can_install_node_packages()
+    public function it_can_install_node_packages(): void
     {
         $this->artisan(InstallCommand::class);
 
