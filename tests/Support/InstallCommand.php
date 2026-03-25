@@ -7,6 +7,7 @@ use Esign\InstallCommand\ValueObjects\AppendableFile;
 use Esign\InstallCommand\ValueObjects\ComposerPackage;
 use Esign\InstallCommand\ValueObjects\NodePackage;
 use Esign\InstallCommand\ValueObjects\PublishableFile;
+use Esign\InstallCommand\ValueObjects\PublishableFolder;
 
 class InstallCommand extends BaseInstallCommand
 {
@@ -18,6 +19,10 @@ class InstallCommand extends BaseInstallCommand
             new PublishableFile(
                 path: __DIR__ . '/stubs/app/Services/UserService.php',
                 target: base_path('app/Services/UserService.php'),
+            ),
+            new PublishableFolder(
+                path: __DIR__ . '/stubs/resources',
+                target: base_path('resources/vendor/stubs'),
             ),
             new AppendableFile(
                 path: __DIR__ . '/stubs/app/Models/User.php',

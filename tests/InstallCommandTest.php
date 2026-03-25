@@ -19,6 +19,15 @@ final class InstallCommandTest extends TestCase
     }
 
     #[Test]
+    public function it_can_publish_folders(): void
+    {
+        $this->artisan(InstallCommand::class);
+
+        $this->assertFileExists(base_path('resources/vendor/stubs/js/app.js'));
+        $this->assertFileExists(base_path('resources/vendor/stubs/views/layouts/app.blade.php'));
+    }
+
+    #[Test]
     public function it_can_append_after_the_search_value_in_a_file(): void
     {
         $this->artisan(InstallCommand::class);

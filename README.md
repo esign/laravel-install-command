@@ -24,6 +24,7 @@ use Esign\InstallCommand\ValueObjects\AppendableFile;
 use Esign\InstallCommand\ValueObjects\ComposerPackage;
 use Esign\InstallCommand\ValueObjects\NodePackage;
 use Esign\InstallCommand\ValueObjects\PublishableFile;
+use Esign\InstallCommand\ValueObjects\PublishableFolder;
 
 class MyInstallCommand extends InstallCommand
 {
@@ -36,6 +37,10 @@ class MyInstallCommand extends InstallCommand
             new PublishableFile(
                 path: __DIR__ . '/../../stubs/my-stub.stub',
                 target: base_path('my-stub.php'),
+            ),
+            new PublishableFolder(
+                path: __DIR__ . '/../../stubs/resources',
+                target: base_path('resources'),
             ),
             new AppendableFile(
                 path: __DIR__ . '/../../stubs/my-appendable-stub.stub',

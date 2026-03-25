@@ -10,6 +10,7 @@ use Esign\InstallCommand\ValueObjects\AppendableFile;
 use Esign\InstallCommand\ValueObjects\ComposerPackage;
 use Esign\InstallCommand\ValueObjects\NodePackage;
 use Esign\InstallCommand\ValueObjects\PublishableFile;
+use Esign\InstallCommand\ValueObjects\PublishableFolder;
 use Illuminate\Console\Command;
 use Illuminate\Process\Exceptions\ProcessFailedException;
 
@@ -54,6 +55,15 @@ abstract class InstallCommand extends Command
                 $this->fileInstaller->publishFile(
                     path: $publishableFile->path,
                     target: $publishableFile->target
+                );
+            });
+
+        $fileCollection
+            ->filter(fn ($publishableFile) => $publishableFile instanceof PublishableFolder)
+            ->each(function (PublishableFolder $publishableFolder) {
+                $this->fileInstaller->publishFolder(
+                    path: $publishableFolder->path,
+                    target: $publishableFolder->target
                 );
             });
 
