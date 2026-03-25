@@ -22,6 +22,18 @@ class FileInstaller
         );
     }
 
+    public function publishFolder(string $path, string $target): void
+    {
+        $this->filesystem->ensureDirectoryExists(
+            path: $target
+        );
+
+        $this->filesystem->copyDirectory(
+            directory: $path,
+            destination: $target,
+        );
+    }
+
     public function appendToFile(string $path, string $target, ?string $search): void
     {
         $noSearchResultSupplied = is_null($search);
