@@ -11,8 +11,10 @@ use Esign\InstallCommand\ValueObjects\ComposerPackage;
 use Esign\InstallCommand\ValueObjects\NodePackage;
 use Esign\InstallCommand\ValueObjects\PublishableFile;
 use Esign\InstallCommand\ValueObjects\PublishableFolder;
+use Esign\InstallCommand\ValueObjects\PublishResult;
 use Illuminate\Console\Command;
 use Illuminate\Process\Exceptions\ProcessFailedException;
+use Illuminate\Support\Collection;
 
 abstract class InstallCommand extends Command
 {
@@ -46,38 +48,69 @@ abstract class InstallCommand extends Command
     protected function installFiles(): void
     {
         $fileCollection = collect($this->publishableFiles());
+        $force = (bool) $this->option('force');
+        $publishResults = [];
 
         $this->info("🗄 Installing files...");
 
         $fileCollection
             ->filter(fn ($publishableFile) => $publishableFile instanceof PublishableFile)
-            ->each(function (PublishableFile $publishableFile) {
-                $this->fileInstaller->publishFile(
+            ->each(function (PublishableFile $publishableFile) use ($force, &$publishResults) {
+                $publishResults[] = $this->fileInstaller->publishFile(
                     path: $publishableFile->path,
-                    target: $publishableFile->target
+                    target: $publishableFile->target,
+                    force: $force
                 );
             });
 
         $fileCollection
             ->filter(fn ($publishableFile) => $publishableFile instanceof PublishableFolder)
-            ->each(function (PublishableFolder $publishableFolder) {
-                $this->fileInstaller->publishFolder(
+            ->each(function (PublishableFolder $publishableFolder) use ($force, &$publishResults) {
+                $folderPublishResults = $this->fileInstaller->publishFolder(
                     path: $publishableFolder->path,
-                    target: $publishableFolder->target
+                    target: $publishableFolder->target,
+                    force: $force
                 );
+
+                $publishResults = [...$publishResults, ...$folderPublishResults];
             });
 
         $fileCollection
             ->filter(fn ($publishableFile) => $publishableFile instanceof AppendableFile)
-            ->each(function (AppendableFile $appendableFile) {
-                $this->fileInstaller->appendToFile(
+            ->each(function (AppendableFile $appendableFile) use ($force, &$publishResults) {
+                $publishResults[] = $this->fileInstaller->appendToFile(
                     path: $appendableFile->path,
                     target: $appendableFile->target,
                     search: $appendableFile->search,
+                    force: $force
                 );
             });
 
+        $this->displayPublishResults(collect($publishResults));
+
         $this->info("✅ Successfully installed files.");
+    }
+
+    protected function displayPublishResults(Collection $publishResults): void
+    {
+        $publishedResults = $publishResults->filter(fn (PublishResult $publishResult) => $publishResult->published);
+        $skippedResults = $publishResults->filter(fn (PublishResult $publishResult) => !$publishResult->published);
+
+        $this->info(sprintf(
+            '📄 Publish overview: %d published, %d skipped.',
+            $publishedResults->count(),
+            $skippedResults->count()
+        ));
+
+        if ($publishedResults->isNotEmpty()) {
+            $this->line('Published files:');
+            $publishedResults->each(fn (PublishResult $publishResult) => $this->line(" + {$publishResult->path} -> {$publishResult->target}"));
+        }
+
+        if ($skippedResults->isNotEmpty()) {
+            $this->line('Skipped files:');
+            $skippedResults->each(fn (PublishResult $publishResult) => $this->line(" - {$publishResult->path} -> {$publishResult->target}"));
+        }
     }
 
     protected function installComposerPackages(): void

@@ -2,6 +2,7 @@
 
 namespace Esign\InstallCommand\Installers;
 
+use Esign\InstallCommand\ValueObjects\PublishResult;
 use Illuminate\Filesystem\Filesystem;
 
 class FileInstaller
@@ -10,8 +11,12 @@ class FileInstaller
         protected Filesystem $filesystem,
     ) {}
 
-    public function publishFile(string $path, string $target): void
+    public function publishFile(string $path, string $target, bool $force = true): PublishResult
     {
+        if ($this->filesystem->exists($target) && !$force) {
+            return PublishResult::skipped(path: $path, target: $target);
+        }
+
         $this->filesystem->ensureDirectoryExists(
             path: dirname($target)
         );
@@ -20,31 +25,70 @@ class FileInstaller
             path: $path,
             target: $target,
         );
+
+        return PublishResult::published(path: $path, target: $target);
     }
 
-    public function publishFolder(string $path, string $target): void
+    /** @return array<PublishResult> */
+    public function publishFolder(string $path, string $target, bool $force = true): array
     {
+        $sourceDirectory = rtrim($path, DIRECTORY_SEPARATOR);
+        $targetDirectory = rtrim($target, DIRECTORY_SEPARATOR);
+        $publishResults = [];
+
         $this->filesystem->ensureDirectoryExists(
-            path: $target
+            path: $targetDirectory
         );
 
-        $this->filesystem->copyDirectory(
-            directory: $path,
-            destination: $target,
-        );
+        foreach ($this->filesystem->allFiles($sourceDirectory) as $sourceFile) {
+            $sourcePath = $sourceFile->getPathname();
+            $relativePath = ltrim(str_replace($sourceDirectory, '', $sourcePath), DIRECTORY_SEPARATOR);
+            $targetPath = $targetDirectory . DIRECTORY_SEPARATOR . $relativePath;
+
+            if ($this->filesystem->exists($targetPath) && !$force) {
+                $publishResults[] = PublishResult::skipped(path: $sourcePath, target: $targetPath);
+                continue;
+            }
+
+            $this->filesystem->ensureDirectoryExists(
+                path: dirname($targetPath)
+            );
+
+            $this->filesystem->copy(
+                path: $sourcePath,
+                target: $targetPath,
+            );
+
+            $publishResults[] = PublishResult::published(path: $sourcePath, target: $targetPath);
+        }
+
+        return $publishResults;
     }
 
-    public function appendToFile(string $path, string $target, ?string $search): void
+    public function appendToFile(string $path, string $target, ?string $search, bool $force = true): PublishResult
     {
+        $contentToAppend = $this->filesystem->get($path);
+
+        if (!$this->filesystem->exists($target)) {
+            $this->appendFileToEndOfFile(path: $path, target: $target);
+            return PublishResult::published(path: $path, target: $target);
+        }
+
+        if (!$force && $this->fileContainsString(path: $target, search: $contentToAppend)) {
+            return PublishResult::skipped(path: $path, target: $target);
+        }
+
         $noSearchResultSupplied = is_null($search);
         $searchResultNotFound = ! $this->fileContainsString(path: $target, search: $search);
 
         if ($noSearchResultSupplied || $searchResultNotFound) {
             $this->appendFileToEndOfFile(path: $path, target: $target);
-            return;
+            return PublishResult::published(path: $path, target: $target);
         }
 
         $this->appendFileAfterSearchResultInFile(path: $path, target: $target, search: $search);
+
+        return PublishResult::published(path: $path, target: $target);
     }
 
     public function appendFileToEndOfFile(string $path, string $target): void

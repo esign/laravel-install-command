@@ -13,7 +13,7 @@ final class InstallCommandTest extends TestCase
     #[Test]
     public function it_can_publish_files(): void
     {
-        $this->artisan(InstallCommand::class);
+        $this->artisan(InstallCommand::class, ['--force' => true]);
 
         $this->assertFileExists(app_path('Services/UserService.php'));
     }
@@ -21,7 +21,7 @@ final class InstallCommandTest extends TestCase
     #[Test]
     public function it_can_publish_folders(): void
     {
-        $this->artisan(InstallCommand::class);
+        $this->artisan(InstallCommand::class, ['--force' => true]);
 
         $this->assertFileExists(base_path('resources/vendor/stubs/js/app.js'));
         $this->assertFileExists(base_path('resources/vendor/stubs/views/layouts/app.blade.php'));
@@ -30,7 +30,7 @@ final class InstallCommandTest extends TestCase
     #[Test]
     public function it_can_append_after_the_search_value_in_a_file(): void
     {
-        $this->artisan(InstallCommand::class);
+        $this->artisan(InstallCommand::class, ['--force' => true]);
 
         $this->assertTrue(str_contains(
             haystack: File::get(app_path('Models/User.php')),
@@ -46,7 +46,7 @@ final class InstallCommandTest extends TestCase
     #[Test]
     public function it_can_install_composer_packages(): void
     {
-        $this->artisan(InstallCommand::class);
+        $this->artisan(InstallCommand::class, ['--force' => true]);
 
         Process::assertRan('composer require my/composer-package my/specific-composer-package:^1.0');
         Process::assertRan('composer require --dev my/dev-composer-package');
@@ -56,7 +56,7 @@ final class InstallCommandTest extends TestCase
     public function it_can_throw_an_exception_when_no_package_json_file_is_present(): void
     {
         File::delete(base_path('package.json'));
-        $command = $this->artisan(InstallCommand::class);
+        $command = $this->artisan(InstallCommand::class, ['--force' => true]);
 
         $command->expectsOutput("Could not find package.json file in the root of your project. Please create one using `npm init`");
     }
@@ -64,9 +64,191 @@ final class InstallCommandTest extends TestCase
     #[Test]
     public function it_can_install_node_packages(): void
     {
-        $this->artisan(InstallCommand::class);
+        $this->artisan(InstallCommand::class, ['--force' => true]);
 
         Process::assertRan('npm install my/node-package my/specific-node-package@^1.0');
         Process::assertRan('npm install --save-dev my/dev-node-package');
+    }
+
+    #[Test]
+    public function it_does_not_overwrite_existing_files_without_force_flag(): void
+    {
+        $filePath = app_path('Services/UserService.php');
+
+        // First run to create the file
+        $this->artisan(InstallCommand::class);
+        $originalContent = File::get($filePath);
+
+        // Modify the file
+        $modifiedContent = '<?php // Modified content';
+        File::put($filePath, $modifiedContent);
+
+        // Run the command again without --force
+        $this->artisan(InstallCommand::class);
+
+        // File should not be overwritten
+        $this->assertEquals($modifiedContent, File::get($filePath));
+    }
+
+    #[Test]
+    public function it_overwrites_existing_files_with_force_flag(): void
+    {
+        $filePath = app_path('Services/UserService.php');
+
+        // First run to create the file
+        $this->artisan(InstallCommand::class, ['--force' => true]);
+        $originalContent = File::get($filePath);
+
+        // Modify the file
+        $modifiedContent = '<?php // Modified content';
+        File::put($filePath, $modifiedContent);
+
+        // Run the command with --force
+        $this->artisan(InstallCommand::class, ['--force' => true]);
+
+        // File should be overwritten back to original
+        $this->assertEquals($originalContent, File::get($filePath));
+    }
+
+    #[Test]
+    public function it_does_not_overwrite_existing_folders_without_force_flag(): void
+    {
+        // First run to create the folder
+        $this->artisan(InstallCommand::class, ['--force' => true]);
+        $originalFile = base_path('resources/vendor/stubs/js/app.js');
+
+        // Create a new file in the folder
+        File::put($originalFile, '// Modified content');
+
+        // Run the command again without --force
+        $this->artisan(InstallCommand::class);
+
+        // Folder should not be overwritten
+        $this->assertEquals('// Modified content', File::get($originalFile));
+    }
+
+    #[Test]
+    public function it_publishes_missing_files_in_existing_folders_without_force_flag(): void
+    {
+        $existingFile = base_path('resources/vendor/stubs/js/app.js');
+        $missingFile = base_path('resources/vendor/stubs/views/layouts/app.blade.php');
+
+        $this->artisan(InstallCommand::class, ['--force' => true]);
+
+        File::put($existingFile, '// Modified content');
+        File::delete($missingFile);
+
+        $this->assertFileDoesNotExist($missingFile);
+
+        $this->artisan(InstallCommand::class);
+
+        $this->assertEquals('// Modified content', File::get($existingFile));
+        $this->assertFileExists($missingFile);
+    }
+
+    #[Test]
+    public function it_overwrites_existing_folders_with_force_flag(): void
+    {
+        $originalFile = base_path('resources/vendor/stubs/js/app.js');
+
+        // First run to create the folder
+        $this->artisan(InstallCommand::class, ['--force' => true]);
+        $originalContent = File::get($originalFile);
+
+        // Modify the file
+        File::put($originalFile, '// Modified content');
+
+        // Run the command with --force
+        $this->artisan(InstallCommand::class, ['--force' => true]);
+
+        // Folder should be overwritten back to original
+        $this->assertEquals($originalContent, File::get($originalFile));
+    }
+
+    #[Test]
+    public function it_creates_file_with_appended_content_when_target_does_not_exist_without_force_flag(): void
+    {
+        $filePath = app_path('Models/User.php');
+        $appendedSnippet = trim(File::get(__DIR__ . '/Support/stubs/app/Models/User.php'));
+
+        File::delete($filePath);
+        $this->assertFileDoesNotExist($filePath);
+
+        $this->artisan(InstallCommand::class);
+
+        $this->assertFileExists($filePath);
+        $this->assertStringContainsString($appendedSnippet, File::get($filePath));
+        $this->assertSame(1, substr_count(File::get($filePath), $appendedSnippet));
+    }
+
+    #[Test]
+    public function it_creates_file_with_appended_content_when_target_does_not_exist_with_force_flag(): void
+    {
+        $filePath = app_path('Models/User.php');
+        $appendedSnippet = trim(File::get(__DIR__ . '/Support/stubs/app/Models/User.php'));
+
+        File::delete($filePath);
+        $this->assertFileDoesNotExist($filePath);
+
+        $this->artisan(InstallCommand::class, ['--force' => true]);
+
+        $this->assertFileExists($filePath);
+        $this->assertStringContainsString($appendedSnippet, File::get($filePath));
+        $this->assertSame(1, substr_count(File::get($filePath), $appendedSnippet));
+    }
+
+    #[Test]
+    public function it_does_not_append_to_existing_files_without_force_flag(): void
+    {
+        $filePath = app_path('Models/User.php');
+        $appendedSnippet = trim(File::get(__DIR__ . '/Support/stubs/app/Models/User.php'));
+
+        // First run
+        $this->artisan(InstallCommand::class);
+        $contentAfterFirstRun = File::get($filePath);
+
+        // Run the command again without --force
+        $this->artisan(InstallCommand::class);
+
+        // File should not be modified again
+        $this->assertEquals($contentAfterFirstRun, File::get($filePath));
+        $this->assertSame(1, substr_count(File::get($filePath), $appendedSnippet));
+    }
+
+    #[Test]
+    public function it_appends_to_existing_files_with_force_flag(): void
+    {
+        $filePath = app_path('Models/User.php');
+        $appendedSnippet = trim(File::get(__DIR__ . '/Support/stubs/app/Models/User.php'));
+
+        // First run
+        $this->artisan(InstallCommand::class);
+        $contentAfterFirstRun = File::get($filePath);
+
+        // Run the command with --force
+        $this->artisan(InstallCommand::class, ['--force' => true]);
+
+        // File should be appended to again
+        $contentAfterSecondRun = File::get($filePath);
+        $this->assertNotEquals($contentAfterFirstRun, $contentAfterSecondRun);
+        $this->assertStringContainsString($contentAfterFirstRun, $contentAfterSecondRun);
+        $this->assertSame(2, substr_count($contentAfterSecondRun, $appendedSnippet));
+    }
+
+    #[Test]
+    public function it_shows_publish_overview_for_published_files(): void
+    {
+        $command = $this->artisan(InstallCommand::class, ['--force' => true]);
+
+        $command->expectsOutput('📄 Publish overview: 4 published, 0 skipped.');
+    }
+
+    #[Test]
+    public function it_shows_publish_overview_for_skipped_files(): void
+    {
+        $this->artisan(InstallCommand::class, ['--force' => true]);
+        $command = $this->artisan(InstallCommand::class);
+
+        $command->expectsOutput('📄 Publish overview: 0 published, 4 skipped.');
     }
 }
