@@ -53,6 +53,7 @@ class FileInstaller
 
         if (!$this->filesystem->exists($target)) {
             $this->appendFileToEndOfFile(path: $path, target: $target);
+
             return PublishResult::published(path: $path, target: $target);
         }
 
@@ -65,6 +66,7 @@ class FileInstaller
 
         if ($noSearchResultSupplied || $searchResultNotFound) {
             $this->appendFileToEndOfFile(path: $path, target: $target);
+
             return PublishResult::published(path: $path, target: $target);
         }
 
