@@ -4,6 +4,7 @@ namespace Esign\InstallCommand\Installers;
 
 use Esign\InstallCommand\ValueObjects\PublishResult;
 use Illuminate\Filesystem\Filesystem;
+use SplFileInfo;
 
 class FileInstaller
 {
@@ -34,35 +35,16 @@ class FileInstaller
     {
         $sourceDirectory = rtrim($path, DIRECTORY_SEPARATOR);
         $targetDirectory = rtrim($target, DIRECTORY_SEPARATOR);
-        $publishResults = [];
 
-        $this->filesystem->ensureDirectoryExists(
-            path: $targetDirectory
-        );
+        return collect($this->filesystem->allFiles($sourceDirectory))
+            ->map(function (SplFileInfo $sourceFile) use ($sourceDirectory, $targetDirectory, $force) {
+                $sourcePath = $sourceFile->getPathname();
+                $relativePath = ltrim(str_replace($sourceDirectory, '', $sourcePath), DIRECTORY_SEPARATOR);
+                $targetPath = $targetDirectory . DIRECTORY_SEPARATOR . $relativePath;
 
-        foreach ($this->filesystem->allFiles($sourceDirectory) as $sourceFile) {
-            $sourcePath = $sourceFile->getPathname();
-            $relativePath = ltrim(str_replace($sourceDirectory, '', $sourcePath), DIRECTORY_SEPARATOR);
-            $targetPath = $targetDirectory . DIRECTORY_SEPARATOR . $relativePath;
-
-            if ($this->filesystem->exists($targetPath) && !$force) {
-                $publishResults[] = PublishResult::skipped(path: $sourcePath, target: $targetPath);
-                continue;
-            }
-
-            $this->filesystem->ensureDirectoryExists(
-                path: dirname($targetPath)
-            );
-
-            $this->filesystem->copy(
-                path: $sourcePath,
-                target: $targetPath,
-            );
-
-            $publishResults[] = PublishResult::published(path: $sourcePath, target: $targetPath);
-        }
-
-        return $publishResults;
+                return $this->publishFile($sourcePath, $targetPath, $force);
+            })
+            ->all();
     }
 
     public function appendToFile(string $path, string $target, ?string $search, bool $force = true): PublishResult
