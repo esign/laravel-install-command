@@ -28,7 +28,7 @@ use Esign\InstallCommand\ValueObjects\PublishableFolder;
 
 class MyInstallCommand extends InstallCommand
 {
-    protected $signature = 'my-install-command {--force : Overwrite or re-append existing files}';
+    protected $signature = 'my-install-command';
     protected $description = 'Publish my stubs and install my packages';
 
     protected function publishableFiles(): array
