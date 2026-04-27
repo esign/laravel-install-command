@@ -28,7 +28,7 @@ use Esign\InstallCommand\ValueObjects\PublishableFolder;
 
 class MyInstallCommand extends InstallCommand
 {
-    protected $signature = 'my-install-command';
+    protected $signature = 'my-install-command {--force : Overwrite or re-append existing files}';
     protected $description = 'Publish my stubs and install my packages';
 
     protected function publishableFiles(): array
@@ -73,6 +73,34 @@ class MyInstallCommand extends InstallCommand
     }
 }
 ```
+
+### Publishing behavior
+
+By default, file publishing is conservative:
+
+- `PublishableFile`: publishes the file only when the target file does not already exist.
+- `PublishableFolder`: evaluates files inside the folder individually. Missing files are published, existing files are skipped.
+- `AppendableFile`: appends content when the target file does not exist yet, or when the appendable content is not already present.
+
+If you run the command with `--force`, the installer becomes aggressive:
+
+- existing published files are overwritten
+- existing files inside published folders are overwritten
+- appendable content is appended again, even if it is already present
+
+### Publish overview
+
+After publishing files, the command prints an overview of what happened:
+
+```text
+📄 Publish overview: 3 published, 1 skipped.
+Published files:
+ + /path/to/source.stub -> /path/to/target.php
+Skipped files:
+ - /path/to/source.stub -> /path/to/target.php
+```
+
+This makes it easier to see which files were created, overwritten, appended, or skipped during installation.
 
 
 ### Testing

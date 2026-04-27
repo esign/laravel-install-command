@@ -2,7 +2,9 @@
 
 namespace Esign\InstallCommand\Installers;
 
+use Esign\InstallCommand\ValueObjects\PublishResult;
 use Illuminate\Filesystem\Filesystem;
+use SplFileInfo;
 
 class FileInstaller
 {
@@ -10,8 +12,12 @@ class FileInstaller
         protected Filesystem $filesystem,
     ) {}
 
-    public function publishFile(string $path, string $target): void
+    public function publishFile(string $path, string $target, bool $force = true): PublishResult
     {
+        if ($this->filesystem->exists($target) && !$force) {
+            return PublishResult::skipped(path: $path, target: $target);
+        }
+
         $this->filesystem->ensureDirectoryExists(
             path: dirname($target)
         );
@@ -20,31 +26,53 @@ class FileInstaller
             path: $path,
             target: $target,
         );
+
+        return PublishResult::published(path: $path, target: $target);
     }
 
-    public function publishFolder(string $path, string $target): void
+    /** @return array<PublishResult> */
+    public function publishFolder(string $path, string $target, bool $force = true): array
     {
-        $this->filesystem->ensureDirectoryExists(
-            path: $target
-        );
+        $sourceDirectory = rtrim($path, DIRECTORY_SEPARATOR);
+        $targetDirectory = rtrim($target, DIRECTORY_SEPARATOR);
 
-        $this->filesystem->copyDirectory(
-            directory: $path,
-            destination: $target,
-        );
+        return collect($this->filesystem->allFiles($sourceDirectory))
+            ->map(function (SplFileInfo $sourceFile) use ($sourceDirectory, $targetDirectory, $force) {
+                $sourcePath = $sourceFile->getPathname();
+                $relativePath = ltrim(str_replace($sourceDirectory, '', $sourcePath), DIRECTORY_SEPARATOR);
+                $targetPath = $targetDirectory . DIRECTORY_SEPARATOR . $relativePath;
+
+                return $this->publishFile($sourcePath, $targetPath, $force);
+            })
+            ->all();
     }
 
-    public function appendToFile(string $path, string $target, ?string $search): void
+    public function appendToFile(string $path, string $target, ?string $search, bool $force = true): PublishResult
     {
+        $contentToAppend = $this->filesystem->get($path);
+
+        if (!$this->filesystem->exists($target)) {
+            $this->appendFileToEndOfFile(path: $path, target: $target);
+
+            return PublishResult::published(path: $path, target: $target);
+        }
+
+        if (!$force && $this->fileContainsString(path: $target, search: $contentToAppend)) {
+            return PublishResult::skipped(path: $path, target: $target);
+        }
+
         $noSearchResultSupplied = is_null($search);
         $searchResultNotFound = ! $this->fileContainsString(path: $target, search: $search);
 
         if ($noSearchResultSupplied || $searchResultNotFound) {
             $this->appendFileToEndOfFile(path: $path, target: $target);
-            return;
+
+            return PublishResult::published(path: $path, target: $target);
         }
 
         $this->appendFileAfterSearchResultInFile(path: $path, target: $target, search: $search);
+
+        return PublishResult::published(path: $path, target: $target);
     }
 
     public function appendFileToEndOfFile(string $path, string $target): void
