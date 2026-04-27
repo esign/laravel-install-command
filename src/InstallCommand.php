@@ -27,6 +27,7 @@ abstract class InstallCommand extends Command
     {
         parent::configure();
 
+        $this->addOption('force', null, InputOption::VALUE_NONE, 'Overwrite existing files');
         $this->addOption('filter', null, InputOption::VALUE_IS_ARRAY | InputOption::VALUE_REQUIRED, 'Filter publishable files by target path');
     }
 
