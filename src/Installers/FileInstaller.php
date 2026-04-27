@@ -12,8 +12,12 @@ class FileInstaller
         protected Filesystem $filesystem,
     ) {}
 
-    public function publishFile(string $path, string $target, bool $force = true): PublishResult
+    public function publishFile(string $path, string $target, bool $force = true, array $filters = []): PublishResult
     {
+        if (! $this->matchesFilters($target, $filters)) {
+            return PublishResult::skipped(path: $path, target: $target);
+        }
+
         if ($this->filesystem->exists($target) && !$force) {
             return PublishResult::skipped(path: $path, target: $target);
         }
@@ -31,24 +35,28 @@ class FileInstaller
     }
 
     /** @return array<PublishResult> */
-    public function publishFolder(string $path, string $target, bool $force = true): array
+    public function publishFolder(string $path, string $target, bool $force = true, array $filters = []): array
     {
         $sourceDirectory = rtrim($path, DIRECTORY_SEPARATOR);
         $targetDirectory = rtrim($target, DIRECTORY_SEPARATOR);
 
         return collect($this->filesystem->allFiles($sourceDirectory))
-            ->map(function (SplFileInfo $sourceFile) use ($sourceDirectory, $targetDirectory, $force) {
+            ->map(function (SplFileInfo $sourceFile) use ($sourceDirectory, $targetDirectory, $force, $filters) {
                 $sourcePath = $sourceFile->getPathname();
                 $relativePath = ltrim(str_replace($sourceDirectory, '', $sourcePath), DIRECTORY_SEPARATOR);
                 $targetPath = $targetDirectory . DIRECTORY_SEPARATOR . $relativePath;
 
-                return $this->publishFile($sourcePath, $targetPath, $force);
+                return $this->publishFile($sourcePath, $targetPath, $force, $filters);
             })
             ->all();
     }
 
-    public function appendToFile(string $path, string $target, ?string $search, bool $force = true): PublishResult
+    public function appendToFile(string $path, string $target, ?string $search, bool $force = true, array $filters = []): PublishResult
     {
+        if (! $this->matchesFilters($target, $filters)) {
+            return PublishResult::skipped(path: $path, target: $target);
+        }
+
         $contentToAppend = $this->filesystem->get($path);
 
         if (!$this->filesystem->exists($target)) {
@@ -97,6 +105,17 @@ class FileInstaller
         return str_contains(
             haystack: $this->filesystem->get($path),
             needle: $search ?? ''
+        );
+    }
+
+    private function matchesFilters(string $target, array $filters): bool
+    {
+        if (empty($filters)) {
+            return true;
+        }
+
+        return collect($filters)->contains(
+            fn ($filter) => str_contains(strtolower($target), strtolower($filter))
         );
     }
 }

@@ -88,6 +88,17 @@ If you run the command with `--force`, the installer becomes aggressive:
 - existing files inside published folders are overwritten
 - appendable content is appended again, even if it is already present
 
+### Filtering files
+
+You can pass `--filter` one or more times to publish only files whose target path contains any of the given strings (case-insensitive):
+
+```bash
+php artisan my-install-command --filter=Services
+php artisan my-install-command --filter=Services --filter=Models
+```
+
+This is useful when you want to re-publish specific files without running the full install. Note that `--filter` only affects file publishing; Composer and Node package installation is unaffected.
+
 ### Publish overview
 
 After publishing files, the command prints an overview of what happened:
