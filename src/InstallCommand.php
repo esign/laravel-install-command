@@ -27,7 +27,7 @@ abstract class InstallCommand extends Command
     {
         parent::configure();
 
-        $this->addOption('filter', null, InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, 'Filter publishable files by target path');
+        $this->addOption('filter', null, InputOption::VALUE_IS_ARRAY | InputOption::VALUE_REQUIRED, 'Filter publishable files by target path');
     }
 
     public function handle(
@@ -57,7 +57,7 @@ abstract class InstallCommand extends Command
     {
         $fileCollection = collect($this->publishableFiles());
         $force = (bool) $this->option('force');
-        $filters = array_values(array_filter($this->option('filter')));
+        $filters = $this->option('filter');
         $publishResults = [];
 
         $this->info("🗄 Installing files...");
