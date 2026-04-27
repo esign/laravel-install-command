@@ -11,7 +11,7 @@ use Esign\InstallCommand\ValueObjects\PublishableFolder;
 
 class InstallCommand extends BaseInstallCommand
 {
-    protected $signature = 'app:install-command {--force : Overwrite existing files}';
+    protected $signature = 'app:install-command';
 
     protected function publishableFiles(): array
     {

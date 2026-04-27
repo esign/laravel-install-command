@@ -251,4 +251,81 @@ final class InstallCommandTest extends TestCase
 
         $command->expectsOutput('📄 Publish overview: 0 published, 4 skipped.');
     }
+
+    #[Test]
+    public function it_can_filter_publishable_files_by_target_path(): void
+    {
+        $this->artisan(InstallCommand::class, ['--force' => true, '--filter' => ['Services']])
+            ->expectsOutput('📄 Publish overview: 1 published, 3 skipped.')
+            ->assertExitCode(0);
+
+        $this->assertFileExists(app_path('Services/UserService.php'));
+    }
+
+    #[Test]
+    public function it_can_filter_publishable_folders_by_target_path(): void
+    {
+        $this->artisan(InstallCommand::class, ['--force' => true, '--filter' => ['resources']])
+            ->expectsOutput('📄 Publish overview: 2 published, 2 skipped.')
+            ->assertExitCode(0);
+
+        $this->assertFileExists(base_path('resources/vendor/stubs/js/app.js'));
+        $this->assertFileExists(base_path('resources/vendor/stubs/views/layouts/app.blade.php'));
+    }
+
+    #[Test]
+    public function it_can_filter_individual_files_inside_publishable_folders(): void
+    {
+        File::deleteDirectory(base_path('resources/vendor/stubs'));
+
+        $this->artisan(InstallCommand::class, ['--force' => true, '--filter' => ['js']])
+            ->expectsOutput('📄 Publish overview: 1 published, 3 skipped.')
+            ->assertExitCode(0);
+
+        $this->assertFileExists(base_path('resources/vendor/stubs/js/app.js'));
+        $this->assertFileDoesNotExist(base_path('resources/vendor/stubs/views/layouts/app.blade.php'));
+    }
+
+    #[Test]
+    public function it_can_filter_appendable_files_by_target_path(): void
+    {
+        File::delete(app_path('Models/User.php'));
+
+        $this->artisan(InstallCommand::class, ['--force' => true, '--filter' => ['Models']])
+            ->expectsOutput('📄 Publish overview: 1 published, 3 skipped.')
+            ->assertExitCode(0);
+
+        $this->assertFileExists(app_path('Models/User.php'));
+    }
+
+    #[Test]
+    public function it_shows_skipped_when_no_files_match_the_filter(): void
+    {
+        $this->artisan(InstallCommand::class, ['--filter' => ['NonExistentPath']])
+            ->expectsOutput('📄 Publish overview: 0 published, 4 skipped.')
+            ->assertExitCode(0);
+    }
+
+    #[Test]
+    public function it_performs_case_insensitive_filtering(): void
+    {
+        $this->artisan(InstallCommand::class, ['--force' => true, '--filter' => ['services']])
+            ->expectsOutput('📄 Publish overview: 1 published, 3 skipped.')
+            ->assertExitCode(0);
+
+        $this->assertFileExists(app_path('Services/UserService.php'));
+    }
+
+    #[Test]
+    public function it_can_filter_with_multiple_values(): void
+    {
+        File::delete(app_path('Models/User.php'));
+
+        $this->artisan(InstallCommand::class, ['--force' => true, '--filter' => ['Services', 'Models']])
+            ->expectsOutput('📄 Publish overview: 2 published, 2 skipped.')
+            ->assertExitCode(0);
+
+        $this->assertFileExists(app_path('Services/UserService.php'));
+        $this->assertFileExists(app_path('Models/User.php'));
+    }
 }

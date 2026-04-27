@@ -15,12 +15,21 @@ use Esign\InstallCommand\ValueObjects\PublishResult;
 use Illuminate\Console\Command;
 use Illuminate\Process\Exceptions\ProcessFailedException;
 use Illuminate\Support\Collection;
+use Symfony\Component\Console\Input\InputOption;
 
 abstract class InstallCommand extends Command
 {
     protected FileInstaller $fileInstaller;
     protected ComposerPackageInstaller $composerPackageInstaller;
     protected NodePackageInstaller $nodePackageInstaller;
+
+    protected function configure(): void
+    {
+        parent::configure();
+
+        $this->addOption('force', null, InputOption::VALUE_NONE, 'Overwrite existing files');
+        $this->addOption('filter', null, InputOption::VALUE_IS_ARRAY | InputOption::VALUE_REQUIRED, 'Filter publishable files by target path');
+    }
 
     public function handle(
         FileInstaller $fileInstaller,
@@ -49,27 +58,30 @@ abstract class InstallCommand extends Command
     {
         $fileCollection = collect($this->publishableFiles());
         $force = (bool) $this->option('force');
+        $filters = $this->option('filter');
         $publishResults = [];
 
         $this->info("🗄 Installing files...");
 
         $fileCollection
             ->filter(fn ($publishableFile) => $publishableFile instanceof PublishableFile)
-            ->each(function (PublishableFile $publishableFile) use ($force, &$publishResults) {
+            ->each(function (PublishableFile $publishableFile) use ($force, $filters, &$publishResults) {
                 $publishResults[] = $this->fileInstaller->publishFile(
                     path: $publishableFile->path,
                     target: $publishableFile->target,
-                    force: $force
+                    force: $force,
+                    filters: $filters,
                 );
             });
 
         $fileCollection
             ->filter(fn ($publishableFile) => $publishableFile instanceof PublishableFolder)
-            ->each(function (PublishableFolder $publishableFolder) use ($force, &$publishResults) {
+            ->each(function (PublishableFolder $publishableFolder) use ($force, $filters, &$publishResults) {
                 $folderPublishResults = $this->fileInstaller->publishFolder(
                     path: $publishableFolder->path,
                     target: $publishableFolder->target,
-                    force: $force
+                    force: $force,
+                    filters: $filters,
                 );
 
                 $publishResults = [...$publishResults, ...$folderPublishResults];
@@ -77,12 +89,13 @@ abstract class InstallCommand extends Command
 
         $fileCollection
             ->filter(fn ($publishableFile) => $publishableFile instanceof AppendableFile)
-            ->each(function (AppendableFile $appendableFile) use ($force, &$publishResults) {
+            ->each(function (AppendableFile $appendableFile) use ($force, $filters, &$publishResults) {
                 $publishResults[] = $this->fileInstaller->appendToFile(
                     path: $appendableFile->path,
                     target: $appendableFile->target,
                     search: $appendableFile->search,
-                    force: $force
+                    force: $force,
+                    filters: $filters,
                 );
             });
 
